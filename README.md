@@ -2,6 +2,8 @@
 
 This plugin lets you attach physical buttons to your Raspberry Pi and bind them to InkyPi actions: next/previous playlist item, force refresh, shutdown, reboot, restart InkyPi, or run a custom script. Each button supports **short press**, **double-click**, and **long press** with configurable timings.
 
+The same patch of core files is needed as for the [pluginManager](https://github.com/RobinWts/InkyPi-Plugin-PluginManager), it will be automatically applied on first access of the settings panel of this plugin, if you want to know more, see pluginManager docs.
+
 ## How to use the plugin
 
 1. **Open settings**  

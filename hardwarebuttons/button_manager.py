@@ -26,30 +26,38 @@ except ImportError:
 def start_if_needed(refs):
     """Start the button manager thread if we have refs and GPIO; store refs for worker."""
     global _refs, _thread
+    logger.debug("start_if_needed called (thread_alive=%s)", _thread.is_alive() if _thread and _thread.is_alive() else False)
     with _lock:
         _refs = refs
         if _thread is None or not _thread.is_alive():
             _thread = threading.Thread(target=_run, daemon=True)
             _thread.start()
             logger.info("Hardware buttons manager thread started")
+            logger.debug("start_if_needed: started new manager thread")
+        else:
+            logger.debug("start_if_needed: reusing existing thread")
 
 
 def request_reload():
     """Ask the manager to reload config and re-setup buttons on next loop."""
     global _reload_requested
+    logger.debug("request_reload called -> set reload flag")
     _reload_requested = True
 
 
 def _run():
     """Background loop: setup buttons from config, then wait for reload or exit."""
+    logger.debug("_run: button manager loop started")
     while True:
         with _lock:
             refs = _refs
         if not refs:
+            logger.debug("_run: no refs yet -> sleep 2s")
             time.sleep(2)
             continue
         device_config = refs.get("device_config")
         if not device_config:
+            logger.debug("_run: no device_config -> sleep 2s")
             time.sleep(2)
             continue
         cfg = device_config.get_config("hardwarebuttons", default={}) or {}
@@ -58,6 +66,7 @@ def _run():
         double_ms = int(timings.get("double_click_interval_ms", 500))
         long_ms = int(timings.get("long_press_ms", 1000))
         buttons_cfg = cfg.get("buttons") or []
+        logger.debug("_run: loaded config: %d buttons, timings short=%s double=%s long=%s ms", len(buttons_cfg), short_ms, double_ms, long_ms)
 
         _close_buttons()
         global _reload_requested
@@ -77,9 +86,11 @@ def _run():
                 btn = Button(pin, hold_time=long_ms / 1000.0)
                 _setup_button(btn, bindings, refs, short_ms, double_ms, long_ms)
                 _buttons.append((btn, bindings))
+                logger.debug("_run: setup button GPIO %s (id=%s)", pin, bindings.get("id"))
             except Exception as e:
                 logger.warning("Could not setup button on GPIO %s: %s", pin, e)
 
+        logger.debug("_run: %d buttons active, waiting for reload or trigger", len(_buttons))
         while not _reload_requested:
             time.sleep(0.5)
         logger.info("Hardware buttons reload requested")
@@ -87,6 +98,8 @@ def _run():
 
 def _close_buttons():
     global _buttons
+    if _buttons:
+        logger.debug("_close_buttons: closing %d button(s)", len(_buttons))
     for btn, _ in _buttons:
         try:
             btn.close()
@@ -103,6 +116,7 @@ def _setup_button(btn, bindings, refs, short_ms, double_ms, long_ms):
     double_window_remaining = [0.0]
 
     def run_action(action_id, script_path=None):
+        logger.debug("run_action: action_id=%s (from GPIO %s)", action_id, bindings.get("gpio_pin"))
         ctx = {"script_path": script_path} if script_path else None
         try:
             actions.execute_action(refs, action_id, ctx)
@@ -110,6 +124,7 @@ def _setup_button(btn, bindings, refs, short_ms, double_ms, long_ms):
             logger.warning("Button action %s failed: %s", action_id, e)
 
     def on_held():
+        logger.debug("on_held: long press detected on GPIO %s -> firing long_action", bindings.get("gpio_pin"))
         long_fired[0] = True
         if pending_short_timer[0]:
             pending_short_timer[0].cancel()
@@ -127,6 +142,7 @@ def _setup_button(btn, bindings, refs, short_ms, double_ms, long_ms):
             pending_short_timer[0].cancel()
             pending_short_timer[0] = None
             # Second release within double window -> double click
+            logger.debug("on_released: second press in window on GPIO %s -> firing double_action", bindings.get("gpio_pin"))
             action = bindings.get("double_action")
             if action:
                 run_action(action, bindings.get("script_path_double"))
@@ -135,6 +151,7 @@ def _setup_button(btn, bindings, refs, short_ms, double_ms, long_ms):
         # First release: start double-click window
         def fire_short():
             pending_short_timer[0] = None
+            logger.debug("fire_short: single short press on GPIO %s -> firing short_action", bindings.get("gpio_pin"))
             action = bindings.get("short_action")
             if action:
                 run_action(action, bindings.get("script_path_short"))

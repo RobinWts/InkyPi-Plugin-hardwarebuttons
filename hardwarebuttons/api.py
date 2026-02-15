@@ -27,6 +27,7 @@ DEFAULT_TIMINGS = {
 def _capture_refs():
     global _core_refs
     if _core_refs is not None:
+        logger.debug("_capture_refs(): using existing refs (port=%s)", _core_refs.get("port"))
         return _core_refs
     try:
         device_config = current_app.config.get("DEVICE_CONFIG")
@@ -44,9 +45,11 @@ def _capture_refs():
             "app": current_app._get_current_object(),
             "port": port,
         }
+        logger.debug("_capture_refs(): first request -> stored refs (port=%s), starting button manager", port)
         button_manager.start_if_needed(_core_refs)
         return _core_refs
     except RuntimeError:
+        logger.debug("_capture_refs(): no Flask app context (RuntimeError)")
         return None
 
 
@@ -61,8 +64,10 @@ def _ensure_refs():
 @hardwarebuttons_bp.route("/hardwarebuttons-api/save", methods=["POST"])
 def save():
     """Save timings and buttons config. Body: { timings: {}, buttons: [] }."""
+    logger.debug("POST /hardwarebuttons-api/save called")
     refs = _capture_refs()
     if not refs:
+        logger.debug("save: no refs -> 500")
         return jsonify({"success": False, "error": "Not in request context"}), 500
     device_config = refs["device_config"]
     data = request.get_json() or {}
@@ -116,6 +121,7 @@ def save():
 
     payload = {"timings": timings, "buttons": validated_buttons}
     device_config.update_value("hardwarebuttons", payload, write=True)
+    logger.debug("save: wrote %d buttons, timings %s; requesting button manager reload", len(validated_buttons), timings)
     button_manager.request_reload()
     return jsonify({"success": True})
 
@@ -123,16 +129,19 @@ def save():
 @hardwarebuttons_bp.route("/hardwarebuttons-api/available-actions", methods=["GET"])
 def available_actions():
     """Return built-in + plugin-registered actions for dropdowns."""
+    logger.debug("GET /hardwarebuttons-api/available-actions called")
     refs = _capture_refs()
     if not refs:
         return jsonify({"success": False, "actions": []}), 500
     actions_list = get_available_actions(refs["device_config"])
+    logger.debug("available-actions: returning %d actions", len(actions_list))
     return jsonify({"success": True, "actions": actions_list})
 
 
 @hardwarebuttons_bp.route("/hardwarebuttons-api/execute", methods=["POST"])
 def execute():
     """Internal: execute an action (for testing or from worker). Body: { action_id, context?: {} }."""
+    logger.debug("POST /hardwarebuttons-api/execute called")
     refs = _capture_refs()
     if not refs:
         return jsonify({"success": False, "error": "Not in request context"}), 500
@@ -141,8 +150,10 @@ def execute():
     if not action_id:
         return jsonify({"success": False, "error": "action_id required"}), 400
     context = data.get("context") or {}
+    logger.debug("execute: action_id=%s, context keys=%s", action_id, list(context.keys()))
     try:
         actions.execute_action(refs, action_id, context)
+        logger.debug("execute: action %s completed", action_id)
         return jsonify({"success": True})
     except Exception as e:
         logger.exception("execute_action failed")
@@ -152,8 +163,10 @@ def execute():
 @hardwarebuttons_bp.route("/hardwarebuttons-api/restart-service", methods=["POST"])
 def restart_service():
     """Restart InkyPi service (used by system_restart_inkypi action)."""
+    logger.debug("POST /hardwarebuttons-api/restart-service called")
     try:
         service_name = os.environ.get("APPNAME", "inkypi")
+        logger.debug("restart-service: running systemctl restart %s.service", service_name)
         subprocess.run(
             ["sudo", "systemctl", "restart", f"{service_name}.service"],
             timeout=10,

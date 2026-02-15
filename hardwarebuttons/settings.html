@@ -57,9 +57,9 @@
 
     .button-row {
         display: flex;
-        flex-wrap: wrap;
-        gap: 10px;
-        align-items: flex-start;
+        flex-direction: column;
+        gap: 12px;
+        align-items: stretch;
         margin-bottom: 16px;
         padding: 14px;
         background: var(--input-bg, #f9f9f9);
@@ -75,17 +75,24 @@
     .button-row .field-group {
         display: flex;
         flex-direction: column;
-        gap: 4px;
+        gap: 0;
     }
 
-    .button-row .field-group label {
-        font-size: 12px;
+    .button-row .field-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .button-row .field-row label {
+        font-size: 13px;
         color: var(--text-secondary, #666);
         white-space: nowrap;
+        min-width: 85px;
     }
 
     .button-row .pin-input {
-        width: 70px;
+        width: 64px;
         padding: 8px 10px;
         border: 1px solid var(--border-color, #ddd);
         border-radius: 6px;
@@ -100,24 +107,27 @@
         font-size: 13px;
     }
 
-    .button-row .script-path-input {
-        width: 100%;
-        min-width: 180px;
-        max-width: 280px;
-        padding: 6px 10px;
-        border: 1px solid var(--border-color, #ddd);
-        border-radius: 6px;
-        font-size: 12px;
-    }
-
     .button-row .script-path-wrap {
         display: none;
+        margin-top: 6px;
+        margin-left: 95px;
     }
 
     .button-row .script-path-wrap.visible {
         display: flex;
-        flex-direction: column;
-        gap: 4px;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .button-row .script-path-wrap.visible .script-path-input {
+        flex: 1;
+        min-width: 160px;
+        max-width: 260px;
+        padding: 6px 10px;
+        border: 1px solid var(--border-color, #ddd);
+        border-radius: 6px;
+        font-size: 12px;
+        box-sizing: border-box;
     }
 
     .btn-remove {
@@ -133,7 +143,7 @@
         align-items: center;
         justify-content: center;
         flex-shrink: 0;
-        margin-left: auto;
+        align-self: flex-end;
     }
 
     .btn-remove:hover {
@@ -224,42 +234,47 @@
             <div class="button-row" data-button-id="{{ btn.id }}">
                 <input type="hidden" class="btn-id" value="{{ btn.id }}">
                 <div class="field-group">
-                    <label>GPIO pin</label>
-                    <input type="number" class="pin-input" placeholder="e.g. 17" min="2" max="27" value="{{ btn.gpio_pin }}" title="BCM GPIO (2–27)">
+                    <div class="field-row">
+                        <label>GPIO pin</label>
+                        <input type="number" class="pin-input" placeholder="e.g. 17" min="2" max="27" value="{{ btn.gpio_pin }}" title="BCM GPIO (2–27)">
+                    </div>
                 </div>
                 <div class="field-group">
-                    <label>Short press</label>
-                    <select class="short-action">
-                        {% for a in available_actions %}
-                        <option value="{{ a.id }}" {% if btn.short_action == a.id %}selected{% endif %}>{{ a.label }}</option>
-                        {% endfor %}
-                    </select>
+                    <div class="field-row">
+                        <label>Short press</label>
+                        <select class="short-action">
+                            {% for a in available_actions %}
+                            <option value="{{ a.id }}" {% if btn.short_action == a.id %}selected{% endif %}>{{ a.label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
                     <div class="script-path-wrap short-script-wrap" data-action="short">
-                        <label>Script path</label>
                         <input type="text" class="script-path-input short-script" placeholder="/path/to/script.sh" value="{{ btn.script_path_short | default(btn.script_path) | default('') }}">
                     </div>
                 </div>
                 <div class="field-group">
-                    <label>Double-click</label>
-                    <select class="double-action">
-                        {% for a in available_actions %}
-                        <option value="{{ a.id }}" {% if btn.double_action == a.id %}selected{% endif %}>{{ a.label }}</option>
-                        {% endfor %}
-                    </select>
+                    <div class="field-row">
+                        <label>Double-click</label>
+                        <select class="double-action">
+                            {% for a in available_actions %}
+                            <option value="{{ a.id }}" {% if btn.double_action == a.id %}selected{% endif %}>{{ a.label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
                     <div class="script-path-wrap double-script-wrap" data-action="double">
-                        <label>Script path</label>
                         <input type="text" class="script-path-input double-script" placeholder="/path/to/script.sh" value="{{ btn.script_path_double | default('') }}">
                     </div>
                 </div>
                 <div class="field-group">
-                    <label>Long press</label>
-                    <select class="long-action">
-                        {% for a in available_actions %}
-                        <option value="{{ a.id }}" {% if btn.long_action == a.id %}selected{% endif %}>{{ a.label }}</option>
-                        {% endfor %}
-                    </select>
+                    <div class="field-row">
+                        <label>Long press</label>
+                        <select class="long-action">
+                            {% for a in available_actions %}
+                            <option value="{{ a.id }}" {% if btn.long_action == a.id %}selected{% endif %}>{{ a.label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
                     <div class="script-path-wrap long-script-wrap" data-action="long">
-                        <label>Script path</label>
                         <input type="text" class="script-path-input long-script" placeholder="/path/to/script.sh" value="{{ btn.script_path_long | default(btn.script_path) | default('') }}">
                     </div>
                 </div>
@@ -323,30 +338,35 @@
         row.innerHTML = `
             <input type="hidden" class="btn-id" value="${escapeHtml(btn.id)}">
             <div class="field-group">
-                <label>GPIO pin</label>
-                <input type="number" class="pin-input" placeholder="e.g. 17" min="2" max="27" value="${btn.gpio_pin || ''}" title="BCM GPIO (2–27)">
+                <div class="field-row">
+                    <label>GPIO pin</label>
+                    <input type="number" class="pin-input" placeholder="e.g. 17" min="2" max="27" value="${btn.gpio_pin || ''}" title="BCM GPIO (2–27)">
+                </div>
             </div>
             <div class="field-group">
-                <label>Short press</label>
-                <select class="short-action">${buildActionOptions(btn.short_action)}</select>
+                <div class="field-row">
+                    <label>Short press</label>
+                    <select class="short-action">${buildActionOptions(btn.short_action)}</select>
+                </div>
                 <div class="script-path-wrap short-script-wrap" data-action="short">
-                    <label>Script path</label>
                     <input type="text" class="script-path-input short-script" placeholder="/path/to/script.sh" value="${escapeHtml(btn.script_path_short || '')}">
                 </div>
             </div>
             <div class="field-group">
-                <label>Double-click</label>
-                <select class="double-action">${buildActionOptions(btn.double_action)}</select>
+                <div class="field-row">
+                    <label>Double-click</label>
+                    <select class="double-action">${buildActionOptions(btn.double_action)}</select>
+                </div>
                 <div class="script-path-wrap double-script-wrap" data-action="double">
-                    <label>Script path</label>
                     <input type="text" class="script-path-input double-script" placeholder="/path/to/script.sh" value="${escapeHtml(btn.script_path_double || '')}">
                 </div>
             </div>
             <div class="field-group">
-                <label>Long press</label>
-                <select class="long-action">${buildActionOptions(btn.long_action)}</select>
+                <div class="field-row">
+                    <label>Long press</label>
+                    <select class="long-action">${buildActionOptions(btn.long_action)}</select>
+                </div>
                 <div class="script-path-wrap long-script-wrap" data-action="long">
-                    <label>Script path</label>
                     <input type="text" class="script-path-input long-script" placeholder="/path/to/script.sh" value="${escapeHtml(btn.script_path_long || '')}">
                 </div>
             </div>

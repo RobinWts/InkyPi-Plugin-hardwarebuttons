@@ -30,16 +30,19 @@ def get_available_actions(device_config):
         List of dicts: id, label, group ("Core" | "System" | "Current plugin" | "Other plugins"),
         and for plugin actions: url, method, plugin_id.
     """
+    logger.debug("get_available_actions called (device_config=%s)", "yes" if device_config else "no")
     out = []
     # No-action first
     out.append({"id": NO_ACTION_ID, "label": "(No action)", "group": "Core"})
 
     for a in BUILTIN_ACTIONS:
         out.append(dict(a))
+    logger.debug("get_available_actions: added %d built-in actions", len(BUILTIN_ACTIONS))
 
     refresh_info = device_config.get_refresh_info() if device_config else None
     currently_displayed_plugin_id = getattr(refresh_info, "plugin_id", None) if refresh_info else None
     context = {"currently_displayed_plugin_id": currently_displayed_plugin_id}
+    logger.debug("get_available_actions: currently_displayed_plugin_id=%s", currently_displayed_plugin_id)
 
     plugins = device_config.get_plugins() if device_config else []
     for plugin_config in plugins:
@@ -63,6 +66,7 @@ def get_available_actions(device_config):
         group = "Current plugin" if plugin_id == currently_displayed_plugin_id else "Other plugins"
         display_name = plugin_config.get("display_name") or plugin_id
         group_label = f"{group}: {display_name}"
+        n_added = 0
         for act in actions:
             if not isinstance(act, dict):
                 continue
@@ -79,4 +83,8 @@ def get_available_actions(device_config):
                 "method": act.get("method", "POST"),
                 "plugin_id": plugin_id,
             })
+            n_added += 1
+        if n_added:
+            logger.debug("get_available_actions: plugin %s added %d action(s)", plugin_id, n_added)
+    logger.debug("get_available_actions: total %d actions", len(out))
     return out

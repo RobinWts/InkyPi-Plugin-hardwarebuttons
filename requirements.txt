@@ -1,0 +1,3 @@
+# Hardware buttons plugin: GPIO support on Raspberry Pi
+# Optional: if not installed, the plugin runs but button handling is disabled (e.g. on dev machines without Pi)
+gpiozero>=2.0

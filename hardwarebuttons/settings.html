@@ -1,0 +1,460 @@
+<style>
+    /* Hide core "Update Now" and "Add to Playlist" buttons for this plugin (UI-only, no display/playlist use) */
+    #settingsForm > .buttons-container {
+        display: none !important;
+    }
+
+    .hardwarebuttons-container {
+        max-width: 700px;
+        margin: 0 auto;
+    }
+
+    .core-patch-warning {
+        background: rgba(255, 152, 0, 0.15) !important;
+        border: 1px solid rgba(255, 152, 0, 0.4) !important;
+    }
+
+    [data-theme="dark"] .core-patch-warning {
+        background: rgba(255, 152, 0, 0.2) !important;
+        border-color: rgba(255, 152, 0, 0.5) !important;
+    }
+
+    [data-theme="dark"] .core-patch-warning p {
+        color: #eee !important;
+    }
+
+    [data-theme="dark"] .core-patch-warning ul {
+        color: #aaa !important;
+    }
+
+    .timings-section {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+        gap: 12px;
+        margin-bottom: 24px;
+    }
+
+    .timings-section label {
+        display: block;
+        font-size: 13px;
+        color: var(--text-secondary, #666);
+        margin-bottom: 4px;
+    }
+
+    .timings-section input {
+        width: 100%;
+        padding: 8px 10px;
+        border: 1px solid var(--border-color, #ddd);
+        border-radius: 6px;
+        font-size: 14px;
+    }
+
+    .buttons-section {
+        margin-top: 24px;
+        padding-top: 20px;
+        border-top: 1px solid var(--border-color, #ddd);
+    }
+
+    .button-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        align-items: flex-start;
+        margin-bottom: 16px;
+        padding: 14px;
+        background: var(--input-bg, #f9f9f9);
+        border: 1px solid var(--border-color, #ddd);
+        border-radius: 8px;
+    }
+
+    [data-theme="dark"] .button-row {
+        background: #2a2a2a;
+        border-color: #555;
+    }
+
+    .button-row .field-group {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .button-row .field-group label {
+        font-size: 12px;
+        color: var(--text-secondary, #666);
+        white-space: nowrap;
+    }
+
+    .button-row .pin-input {
+        width: 70px;
+        padding: 8px 10px;
+        border: 1px solid var(--border-color, #ddd);
+        border-radius: 6px;
+        font-size: 14px;
+    }
+
+    .button-row select {
+        min-width: 180px;
+        padding: 8px 10px;
+        border: 1px solid var(--border-color, #ddd);
+        border-radius: 6px;
+        font-size: 13px;
+    }
+
+    .button-row .script-path-input {
+        width: 100%;
+        min-width: 180px;
+        max-width: 280px;
+        padding: 6px 10px;
+        border: 1px solid var(--border-color, #ddd);
+        border-radius: 6px;
+        font-size: 12px;
+    }
+
+    .button-row .script-path-wrap {
+        display: none;
+    }
+
+    .button-row .script-path-wrap.visible {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .btn-remove {
+        width: 36px;
+        height: 36px;
+        border: none;
+        background: #E53935;
+        color: white;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 18px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        margin-left: auto;
+    }
+
+    .btn-remove:hover {
+        background: #C62828;
+    }
+
+    .btn-add {
+        margin-bottom: 16px;
+    }
+
+    .save-section {
+        margin-top: 24px;
+        padding-top: 20px;
+        border-top: 1px solid var(--border-color, #ddd);
+    }
+
+    .action-group-optgroup {
+        font-weight: bold;
+    }
+</style>
+
+<div class="hardwarebuttons-container">
+    {% if core_needs_patch %}
+    <div class="core-patch-warning"
+        style="padding: 32px 24px; border-radius: 8px; text-align: center; max-width: 600px; margin: 40px auto;">
+        <div style="font-size: 64px; margin-bottom: 20px;">⚠️</div>
+        <p style="margin: 0 0 16px 0; color: var(--text-primary, #333); font-weight: bold; font-size: 20px;">
+            Core files need to be patched
+        </p>
+        <p style="margin: 0 0 16px 0; color: var(--text-secondary, #666); font-size: 15px; line-height: 1.6;">
+            The Hardware Buttons plugin requires core changes to work properly.<br>
+            The patch is being applied automatically now.
+        </p>
+        <p style="margin: 0 0 24px 0; color: var(--text-secondary, #666); font-size: 13px; line-height: 1.6;">
+            The InkyPi service will restart during this process. Please wait about 30 seconds, then use the button
+            below to reload this page.
+        </p>
+        {% if core_patch_missing %}
+        <div
+            style="margin: 0 0 24px 0; padding: 16px; background: rgba(0, 0, 0, 0.05); border-radius: 6px; text-align: left;">
+            <p style="margin: 0 0 10px 0; font-weight: bold; font-size: 13px; color: var(--text-primary, #333);">
+                Missing components before patch:
+            </p>
+            <ul
+                style="margin: 0; padding-left: 24px; color: var(--text-secondary, #666); font-size: 13px; line-height: 1.8;">
+                {% for missing in core_patch_missing %}
+                <li>{{ missing }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+        <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
+            <a href="https://github.com/fatihak/InkyPi/blob/main/docs/building_plugins.md"
+                target="_blank" class="action-button" style="text-decoration: none; display: inline-block;">
+                View Documentation
+            </a>
+            <button type="button" id="reload-btn" class="action-button" onclick="forceReload()" disabled>
+                Reload (30s)
+            </button>
+        </div>
+    </div>
+    {% else %}
+
+    <h2 class="form-label" style="margin-bottom: 12px;">Timings (ms)</h2>
+    <p style="font-size: 13px; color: var(--text-secondary, #666); margin-bottom: 12px;">
+        Short press: under this many ms. Double-click: max interval between clicks. Long press: hold at least this long.
+    </p>
+    <div class="timings-section">
+        <div>
+            <label for="short_press_ms">Short press (max ms)</label>
+            <input type="number" id="short_press_ms" min="50" max="2000" value="{{ timings.short_press_ms | default(500) }}">
+        </div>
+        <div>
+            <label for="double_click_interval_ms">Double-click interval (max ms)</label>
+            <input type="number" id="double_click_interval_ms" min="100" max="2000" value="{{ timings.double_click_interval_ms | default(500) }}">
+        </div>
+        <div>
+            <label for="long_press_ms">Long press (min ms)</label>
+            <input type="number" id="long_press_ms" min="200" max="5000" value="{{ timings.long_press_ms | default(1000) }}">
+        </div>
+    </div>
+
+    <div class="buttons-section">
+        <h2 class="form-label" style="margin-bottom: 12px;">Buttons</h2>
+        <button type="button" class="action-button btn-add" id="add-button-btn">Add button</button>
+        <div id="buttons-list">
+            {% for btn in buttons %}
+            <div class="button-row" data-button-id="{{ btn.id }}">
+                <input type="hidden" class="btn-id" value="{{ btn.id }}">
+                <div class="field-group">
+                    <label>GPIO pin</label>
+                    <input type="number" class="pin-input" placeholder="e.g. 17" min="2" max="27" value="{{ btn.gpio_pin }}" title="BCM GPIO (2–27)">
+                </div>
+                <div class="field-group">
+                    <label>Short press</label>
+                    <select class="short-action">
+                        {% for a in available_actions %}
+                        <option value="{{ a.id }}" {% if btn.short_action == a.id %}selected{% endif %}>{{ a.label }}</option>
+                        {% endfor %}
+                    </select>
+                    <div class="script-path-wrap short-script-wrap" data-action="short">
+                        <label>Script path</label>
+                        <input type="text" class="script-path-input short-script" placeholder="/path/to/script.sh" value="{{ btn.script_path_short | default(btn.script_path) | default('') }}">
+                    </div>
+                </div>
+                <div class="field-group">
+                    <label>Double-click</label>
+                    <select class="double-action">
+                        {% for a in available_actions %}
+                        <option value="{{ a.id }}" {% if btn.double_action == a.id %}selected{% endif %}>{{ a.label }}</option>
+                        {% endfor %}
+                    </select>
+                    <div class="script-path-wrap double-script-wrap" data-action="double">
+                        <label>Script path</label>
+                        <input type="text" class="script-path-input double-script" placeholder="/path/to/script.sh" value="{{ btn.script_path_double | default('') }}">
+                    </div>
+                </div>
+                <div class="field-group">
+                    <label>Long press</label>
+                    <select class="long-action">
+                        {% for a in available_actions %}
+                        <option value="{{ a.id }}" {% if btn.long_action == a.id %}selected{% endif %}>{{ a.label }}</option>
+                        {% endfor %}
+                    </select>
+                    <div class="script-path-wrap long-script-wrap" data-action="long">
+                        <label>Script path</label>
+                        <input type="text" class="script-path-input long-script" placeholder="/path/to/script.sh" value="{{ btn.script_path_long | default(btn.script_path) | default('') }}">
+                    </div>
+                </div>
+                <button type="button" class="btn-remove" title="Remove button">×</button>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="save-section">
+        <button type="button" class="action-button" id="save-btn">Save</button>
+        <span id="save-status" style="margin-left: 12px; font-size: 13px; color: var(--text-secondary, #666);"></span>
+    </div>
+
+    {% endif %}
+</div>
+
+<script>
+    function forceReload() {
+        window.location.reload();
+    }
+
+    const availableActions = {{ available_actions | tojson | safe }};
+    const EXTERNAL_SCRIPT_ID = 'external_script';
+
+    function toggleScriptPathVisibility(row) {
+        if (!row) return;
+        const shortVal = row.querySelector('.short-action').value;
+        const doubleVal = row.querySelector('.double-action').value;
+        const longVal = row.querySelector('.long-action').value;
+        row.querySelector('.short-script-wrap').classList.toggle('visible', shortVal === EXTERNAL_SCRIPT_ID);
+        row.querySelector('.double-script-wrap').classList.toggle('visible', doubleVal === EXTERNAL_SCRIPT_ID);
+        row.querySelector('.long-script-wrap').classList.toggle('visible', longVal === EXTERNAL_SCRIPT_ID);
+    }
+
+    function buildActionOptions(selectedId) {
+        let html = '';
+        const sel = (selectedId == null || selectedId === '') ? '' : selectedId;
+        availableActions.forEach(a => {
+            const val = a.id || '';
+            html += `<option value="${val}" ${(a.id || '') === sel ? 'selected' : ''}>${escapeHtml(a.label)}</option>`;
+        });
+        return html;
+    }
+
+    function escapeHtml(s) {
+        const div = document.createElement('div');
+        div.textContent = s;
+        return div.innerHTML;
+    }
+
+    function nextButtonId() {
+        const existing = document.querySelectorAll('#buttons-list .button-row');
+        return 'btn_' + existing.length;
+    }
+
+    function addButtonRow(btn) {
+        const row = document.createElement('div');
+        row.className = 'button-row';
+        row.setAttribute('data-button-id', btn.id);
+        row.innerHTML = `
+            <input type="hidden" class="btn-id" value="${escapeHtml(btn.id)}">
+            <div class="field-group">
+                <label>GPIO pin</label>
+                <input type="number" class="pin-input" placeholder="e.g. 17" min="2" max="27" value="${btn.gpio_pin || ''}" title="BCM GPIO (2–27)">
+            </div>
+            <div class="field-group">
+                <label>Short press</label>
+                <select class="short-action">${buildActionOptions(btn.short_action)}</select>
+                <div class="script-path-wrap short-script-wrap" data-action="short">
+                    <label>Script path</label>
+                    <input type="text" class="script-path-input short-script" placeholder="/path/to/script.sh" value="${escapeHtml(btn.script_path_short || '')}">
+                </div>
+            </div>
+            <div class="field-group">
+                <label>Double-click</label>
+                <select class="double-action">${buildActionOptions(btn.double_action)}</select>
+                <div class="script-path-wrap double-script-wrap" data-action="double">
+                    <label>Script path</label>
+                    <input type="text" class="script-path-input double-script" placeholder="/path/to/script.sh" value="${escapeHtml(btn.script_path_double || '')}">
+                </div>
+            </div>
+            <div class="field-group">
+                <label>Long press</label>
+                <select class="long-action">${buildActionOptions(btn.long_action)}</select>
+                <div class="script-path-wrap long-script-wrap" data-action="long">
+                    <label>Script path</label>
+                    <input type="text" class="script-path-input long-script" placeholder="/path/to/script.sh" value="${escapeHtml(btn.script_path_long || '')}">
+                </div>
+            </div>
+            <button type="button" class="btn-remove" title="Remove button">×</button>
+        `;
+        document.getElementById('buttons-list').appendChild(row);
+        toggleScriptPathVisibility(row);
+        row.querySelector('.btn-remove').addEventListener('click', () => row.remove());
+        row.querySelectorAll('.short-action, .double-action, .long-action').forEach(el => {
+            el.addEventListener('change', () => toggleScriptPathVisibility(row));
+        });
+    }
+
+    function collectPayload() {
+        const timings = {
+            short_press_ms: parseInt(document.getElementById('short_press_ms').value, 10) || 500,
+            double_click_interval_ms: parseInt(document.getElementById('double_click_interval_ms').value, 10) || 500,
+            long_press_ms: parseInt(document.getElementById('long_press_ms').value, 10) || 1000
+        };
+        const rows = document.querySelectorAll('#buttons-list .button-row');
+        const buttons = [];
+        rows.forEach((row, i) => {
+            const pin = parseInt(row.querySelector('.pin-input').value, 10);
+            if (isNaN(pin) || pin < 2 || pin > 27) return;
+            const id = row.querySelector('.btn-id').value || ('btn_' + i);
+            buttons.push({
+                id: id,
+                gpio_pin: pin,
+                short_action: (row.querySelector('.short-action').value || '').trim() || null,
+                double_action: (row.querySelector('.double-action').value || '').trim() || null,
+                long_action: (row.querySelector('.long-action').value || '').trim() || null,
+                script_path_short: (row.querySelector('.short-script').value || '').trim() || null,
+                script_path_double: (row.querySelector('.double-script').value || '').trim() || null,
+                script_path_long: (row.querySelector('.long-script').value || '').trim() || null
+            });
+        });
+        return { timings, buttons };
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        const reloadBtn = document.getElementById('reload-btn');
+        if (reloadBtn) {
+            let remaining = 30;
+            const updateLabel = () => { reloadBtn.textContent = `Reload (${remaining}s)`; };
+            updateLabel();
+            const intervalId = setInterval(() => {
+                remaining -= 1;
+                if (remaining <= 0) {
+                    clearInterval(intervalId);
+                    reloadBtn.disabled = false;
+                    reloadBtn.textContent = 'Reload now';
+                } else {
+                    updateLabel();
+                }
+            }, 1000);
+        }
+
+        document.querySelectorAll('.button-row').forEach(row => {
+            toggleScriptPathVisibility(row);
+            row.querySelectorAll('.short-action, .double-action, .long-action').forEach(el => {
+                el.addEventListener('change', () => toggleScriptPathVisibility(row));
+            });
+        });
+
+        const addBtn = document.getElementById('add-button-btn');
+        if (addBtn) {
+            addBtn.addEventListener('click', () => {
+                addButtonRow({
+                    id: nextButtonId(),
+                    gpio_pin: 17,
+                    short_action: null,
+                    double_action: null,
+                    long_action: null,
+                    script_path_short: null,
+                    script_path_double: null,
+                    script_path_long: null
+                });
+            });
+        }
+
+        document.querySelectorAll('.btn-remove').forEach(btn => {
+            btn.addEventListener('click', () => btn.closest('.button-row').remove());
+        });
+
+        const saveBtn = document.getElementById('save-btn');
+        const saveStatus = document.getElementById('save-status');
+        if (saveBtn) {
+            saveBtn.addEventListener('click', async () => {
+                saveBtn.disabled = true;
+                saveStatus.textContent = 'Saving…';
+                try {
+                    const payload = collectPayload();
+                    const res = await fetch('/hardwarebuttons-api/save', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    const data = await res.json().catch(() => ({}));
+                    if (res.ok && data.success) {
+                        saveStatus.textContent = 'Saved.';
+                    } else {
+                        saveStatus.textContent = data.error || 'Save failed';
+                    }
+                } catch (e) {
+                    saveStatus.textContent = 'Error: ' + e.message;
+                }
+                saveBtn.disabled = false;
+            });
+        }
+    });
+</script>

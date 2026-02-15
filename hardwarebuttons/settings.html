@@ -72,6 +72,16 @@
         border-color: #555;
     }
 
+    [data-theme="dark"] .pin-recommend-info {
+        background: #2a2a2a !important;
+        border-color: #555 !important;
+        color: #aaa !important;
+    }
+
+    [data-theme="dark"] .pin-recommend-info strong {
+        color: #eee !important;
+    }
+
     .button-row .field-group {
         display: flex;
         flex-direction: column;
@@ -229,6 +239,9 @@
     <div class="buttons-section">
         <h2 class="form-label" style="margin-bottom: 12px;">Buttons</h2>
         <button type="button" class="action-button btn-add" id="add-button-btn">Add button</button>
+        <div class="pin-recommend-info" style="margin-bottom: 16px; padding: 12px 14px; background: var(--input-bg, #f0f4f8); border: 1px solid var(--border-color, #ddd); border-radius: 8px; font-size: 13px; color: var(--text-secondary, #666);">
+            <strong style="color: var(--text-primary, #333);">Recommended Button PINs (BCM):</strong> 2, 3, 4, 27, 22, 23, 24, 25 — avoid pins used by your display (e.g. 17 on some e-ink HATs).
+        </div>
         <div id="buttons-list">
             {% for btn in buttons %}
             <div class="button-row" data-button-id="{{ btn.id }}">
@@ -236,7 +249,7 @@
                 <div class="field-group">
                     <div class="field-row">
                         <label>GPIO pin</label>
-                        <input type="number" class="pin-input" placeholder="e.g. 17" min="2" max="27" value="{{ btn.gpio_pin }}" title="BCM GPIO (2–27)">
+                        <input type="number" class="pin-input" placeholder="e.g. 27" min="2" max="27" value="{{ btn.gpio_pin }}" title="BCM GPIO (2–27)">
                     </div>
                 </div>
                 <div class="field-group">
@@ -285,7 +298,7 @@
     </div>
 
     <div class="save-section">
-        <button type="button" class="action-button" id="save-btn">Save</button>
+        <button type="button" class="action-button" id="save-btn">Save and back</button>
         <span id="save-status" style="margin-left: 12px; font-size: 13px; color: var(--text-secondary, #666);"></span>
     </div>
 
@@ -340,7 +353,7 @@
             <div class="field-group">
                 <div class="field-row">
                     <label>GPIO pin</label>
-                    <input type="number" class="pin-input" placeholder="e.g. 17" min="2" max="27" value="${btn.gpio_pin || ''}" title="BCM GPIO (2–27)">
+                    <input type="number" class="pin-input" placeholder="e.g. 27" min="2" max="27" value="${btn.gpio_pin || ''}" title="BCM GPIO (2–27)">
                 </div>
             </div>
             <div class="field-group">
@@ -436,7 +449,7 @@
             addBtn.addEventListener('click', () => {
                 addButtonRow({
                     id: nextButtonId(),
-                    gpio_pin: 17,
+                    gpio_pin: 27,
                     short_action: null,
                     double_action: null,
                     long_action: null,
@@ -466,7 +479,7 @@
                     });
                     const data = await res.json().catch(() => ({}));
                     if (res.ok && data.success) {
-                        saveStatus.textContent = 'Saved.';
+                        window.location.href = '/';
                     } else {
                         saveStatus.textContent = data.error || 'Save failed';
                     }

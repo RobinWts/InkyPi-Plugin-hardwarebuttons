@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 
 hardwarebuttons_bp = Blueprint("hardwarebuttons_api", __name__)
 
-# Stored refs for use from GPIO worker thread (set on first request)
+# Stored refs for use from GPIO worker thread (set at registration or on first request)
 _core_refs = None
 
 DEFAULT_TIMINGS = {
@@ -24,9 +24,36 @@ DEFAULT_TIMINGS = {
 }
 
 
+@hardwarebuttons_bp.record_once
+def _on_blueprint_registered(state):
+    """Capture refs at startup when blueprint is registered so buttons work without opening settings."""
+    global _core_refs
+    app = state.app
+    device_config = app.config.get("DEVICE_CONFIG")
+    refresh_task = app.config.get("REFRESH_TASK")
+    if device_config is None or refresh_task is None:
+        logger.debug("_on_blueprint_registered: DEVICE_CONFIG or REFRESH_TASK missing, skipping")
+        return
+    _core_refs = {
+        "device_config": device_config,
+        "refresh_task": refresh_task,
+        "app": app,
+        "port": 80,
+    }
+    logger.debug("_on_blueprint_registered: captured refs at startup, starting button manager")
+    button_manager.start_if_needed(_core_refs)
+
+
 def _capture_refs():
     global _core_refs
     if _core_refs is not None:
+        # Update port from request when available (e.g. dev mode uses 8080)
+        if request:
+            try:
+                port = request.environ.get("SERVER_PORT", "80")
+                _core_refs["port"] = int(port)
+            except (TypeError, ValueError):
+                pass
         logger.debug("_capture_refs(): using existing refs (port=%s)", _core_refs.get("port"))
         return _core_refs
     try:

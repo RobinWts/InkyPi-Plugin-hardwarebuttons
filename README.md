@@ -154,3 +154,8 @@ In the plugin, add three buttons with GPIO pins **27**, **22**, and **23**.
 - **External script**: use an absolute path to a script under the InkyPi service user's home directory (for example `/home/pi/scripts/my_action.sh`). The plugin runs it with `bash` and a 30 s timeout.
 - **Call URL**: when triggered, the plugin calls the configured URL using `curl` with a 10 s timeout. The URL must start with `http://` or `https://`. Useful for triggering webhooks, API endpoints, or home automation systems.
 - After changing settings, click **Save and back**; the button manager reloads config without restarting InkyPi.
+
+## Development status
+
+This plugin in still under development, so make sure to look for updates frequently.
+Basic functions are tested to work, action registration of 3rd party plugins is still wip...

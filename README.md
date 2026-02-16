@@ -54,7 +54,7 @@ The script will apply the necessary core changes and restart the InkyPi service.
 
 **Note**: If the Plugin Manager has already been used and the patch was applied, no further action is needed. The patch is shared by all plugins that need blueprint support.
 
-See [CORE_CHANGES.md](./CORE_CHANGES.md) for detailed information about what the patch does and why it's needed.
+See [CORE_CHANGES.md](https://github.com/RobinWts/InkyPi-Plugin-hardwarebuttons/blob/main/hardwarebuttons/CORE_CHANGES.md) for detailed information about what the patch does and why it's needed.
 
 ## Usage
 

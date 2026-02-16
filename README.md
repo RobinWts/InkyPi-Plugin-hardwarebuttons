@@ -34,7 +34,7 @@ The Hardware Buttons plugin lets you connect physical pushbuttons to your Raspbe
 Install the plugin from a GitHub repository:
 
 ```bash
-inkypi plugin install hardwarebuttons https://github.com/RobinWts/hardwarebutton_dev
+inkypi plugin install hardwarebuttons https://github.com/RobinWts/InkyPi-Plugin-hardwarebutton
 ```
 
 ### Step 2: Patch Core Files

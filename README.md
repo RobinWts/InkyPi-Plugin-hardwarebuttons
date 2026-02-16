@@ -36,6 +36,7 @@ Install the plugin from a GitHub repository:
 ```bash
 inkypi plugin install hardwarebuttons https://github.com/RobinWts/InkyPi-Plugin-hardwarebuttons
 ```
+or install the [PluginManager](https://github.com/RobinWts/InkyPi-Plugin-PluginManager) first and use that to install via WebUI.
 
 ### Step 2: Patch Core Files
 

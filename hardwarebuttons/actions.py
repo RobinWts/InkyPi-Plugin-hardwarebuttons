@@ -180,9 +180,12 @@ def _run_external_script(context):
     if not script_path:
         logger.warning("external_script: no script_path in context")
         return
+    # Expand ~ to home directory before validation
+    script_path = os.path.expanduser(script_path)
+    logger.debug("_run_external_script: expanded path=%s", script_path)
     # Restrict to absolute path under /home or allowlist; avoid arbitrary paths
     if not os.path.isabs(script_path):
-        logger.warning("external_script: path must be absolute")
+        logger.warning("external_script: path must be absolute (after expanding ~): %s", script_path)
         return
     if not os.path.isfile(script_path):
         logger.warning("external_script: file not found: %s", script_path)

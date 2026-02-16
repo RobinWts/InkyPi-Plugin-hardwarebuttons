@@ -24,6 +24,27 @@ DEFAULT_TIMINGS = {
 }
 
 
+def _parse_timing(value, default_value, min_value, max_value):
+    """Parse timing value and clamp to safe bounds."""
+    try:
+        parsed = int(value)
+    except (TypeError, ValueError):
+        parsed = default_value
+    return max(min_value, min(max_value, parsed))
+
+
+def _normalize_action(action_id, available_action_ids):
+    """Validate and normalize an action id from UI payload."""
+    action_id = (action_id or "").strip()
+    if not action_id:
+        return None
+    if action_id == "external_script":
+        return action_id
+    if action_id in available_action_ids:
+        return action_id
+    raise ValueError(f"Unknown action_id: {action_id}")
+
+
 @hardwarebuttons_bp.record_once
 def _on_blueprint_registered(state):
     """Capture refs at startup when blueprint is registered so buttons work without opening settings."""
@@ -101,40 +122,61 @@ def save():
     timings = data.get("timings") or {}
     buttons = data.get("buttons") or []
 
-    # Merge timings with defaults
     timings = {
-        "short_press_ms": int(timings.get("short_press_ms", DEFAULT_TIMINGS["short_press_ms"])),
-        "double_click_interval_ms": int(timings.get("double_click_interval_ms", DEFAULT_TIMINGS["double_click_interval_ms"])),
-        "long_press_ms": int(timings.get("long_press_ms", DEFAULT_TIMINGS["long_press_ms"])),
+        "short_press_ms": _parse_timing(
+            timings.get("short_press_ms"),
+            DEFAULT_TIMINGS["short_press_ms"],
+            50,
+            2000,
+        ),
+        "double_click_interval_ms": _parse_timing(
+            timings.get("double_click_interval_ms"),
+            DEFAULT_TIMINGS["double_click_interval_ms"],
+            100,
+            2000,
+        ),
+        "long_press_ms": _parse_timing(
+            timings.get("long_press_ms"),
+            DEFAULT_TIMINGS["long_press_ms"],
+            200,
+            5000,
+        ),
     }
-    timings["short_press_ms"] = max(50, min(2000, timings["short_press_ms"]))
-    timings["double_click_interval_ms"] = max(100, min(2000, timings["double_click_interval_ms"]))
-    timings["long_press_ms"] = max(200, min(5000, timings["long_press_ms"]))
 
     # Validate buttons
     allowed_pins = set(range(2, 28))  # GPIO 2-27 typical for Pi
     validated_buttons = []
+    validation_errors = []
+    used_pins = set()
     available = {a["id"] for a in get_available_actions(device_config)}
     for i, btn in enumerate(buttons):
         if not isinstance(btn, dict):
+            validation_errors.append(f"buttons[{i}] must be an object")
             continue
         pin = btn.get("gpio_pin")
         try:
             pin = int(pin)
         except (TypeError, ValueError):
+            validation_errors.append(f"buttons[{i}].gpio_pin must be an integer")
             continue
         if pin not in allowed_pins:
+            validation_errors.append(f"buttons[{i}].gpio_pin must be between 2 and 27")
             continue
+        if pin in used_pins:
+            validation_errors.append(f"Duplicate GPIO pin configured: {pin}")
+            continue
+        used_pins.add(pin)
         bid = btn.get("id") or f"btn_{i}"
-        short_a = (btn.get("short_action") or "").strip() or None
-        double_a = (btn.get("double_action") or "").strip() or None
-        long_a = (btn.get("long_action") or "").strip() or None
-        for aid in (short_a, double_a, long_a):
-            if aid and aid != "external_script" and aid not in available:
-                logger.warning("Unknown action_id %s for button %s", aid, bid)
-        script_short = (btn.get("script_path_short") or "").strip() or None
-        script_double = (btn.get("script_path_double") or "").strip() or None
-        script_long = (btn.get("script_path_long") or "").strip() or None
+        try:
+            short_a = _normalize_action(btn.get("short_action"), available)
+            double_a = _normalize_action(btn.get("double_action"), available)
+            long_a = _normalize_action(btn.get("long_action"), available)
+        except ValueError as e:
+            validation_errors.append(f"buttons[{i}]: {e}")
+            continue
+        script_short = ((btn.get("script_path_short") or "").strip() or None) if short_a == "external_script" else None
+        script_double = ((btn.get("script_path_double") or "").strip() or None) if double_a == "external_script" else None
+        script_long = ((btn.get("script_path_long") or "").strip() or None) if long_a == "external_script" else None
         validated_buttons.append({
             "id": bid,
             "gpio_pin": pin,
@@ -145,6 +187,10 @@ def save():
             "script_path_double": script_double,
             "script_path_long": script_long,
         })
+
+    if validation_errors:
+        logger.warning("save: validation failed: %s", validation_errors)
+        return jsonify({"success": False, "error": "Validation failed", "details": validation_errors}), 400
 
     payload = {"timings": timings, "buttons": validated_buttons}
     device_config.update_value("hardwarebuttons", payload, write=True)

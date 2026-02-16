@@ -8,10 +8,8 @@ import urllib.request
 
 logger = logging.getLogger(__name__)
 
-# Only one action runs at a time; further triggers are ignored until it returns or times out
+# Only one action runs at a time; further triggers are ignored until it returns.
 _action_lock = threading.Lock()
-# Max seconds to wait for an action; after this the gate is released so new triggers can run
-ACTION_MAX_DURATION_SEC = 120
 
 # Action IDs that are built-in (not plugin-registered)
 BUILTIN_ACTION_IDS = {
@@ -27,7 +25,7 @@ BUILTIN_ACTION_IDS = {
 
 
 def execute_action(refs, action_id, context=None):
-    """Execute a button action. Only one action runs at a time; other triggers are ignored until it returns or times out.
+    """Execute a button action. Only one action runs at a time; other triggers are ignored until it returns.
 
     refs = dict with device_config, refresh_task, app (optional), port (optional).
     context: optional dict with script_path for external_script, etc.
@@ -41,41 +39,15 @@ def execute_action(refs, action_id, context=None):
         return
     try:
         logger.debug("execute_action: lock acquired, running action %s", action_id)
-        _run_action(refs, action_id, context or {})
+        _run_action_impl(refs, action_id, context or {})
         logger.debug("execute_action: action %s finished", action_id)
     finally:
         _action_lock.release()
         logger.debug("execute_action: lock released")
 
 
-def _run_action(refs, action_id, context):
-    """Inner implementation; must be called with _action_lock held. Runs in a thread with timeout so the lock is
-    released after ACTION_MAX_DURATION_SEC even if the action hangs."""
-    logger.debug("_run_action: starting worker thread for %s (timeout=%ss)", action_id, ACTION_MAX_DURATION_SEC)
-    result = [None]  # hold exception if any
-
-    def do_work():
-        try:
-            _run_action_impl(refs, action_id, context)
-        except Exception as e:
-            result[0] = e
-            logger.exception("Action %s failed", action_id)
-
-    worker = threading.Thread(target=do_work, daemon=True)
-    worker.start()
-    worker.join(timeout=ACTION_MAX_DURATION_SEC)
-    if worker.is_alive():
-        logger.debug("_run_action: worker for %s did not finish within timeout", action_id)
-        logger.warning(
-            "Action %s did not complete within %s s, allowing next trigger (previous action may still run)",
-            action_id, ACTION_MAX_DURATION_SEC
-        )
-    if result[0]:
-        raise result[0]
-
-
 def _run_action_impl(refs, action_id, context):
-    """Core logic; no locking. Called from worker thread inside _run_action."""
+    """Core logic; no locking. Called with _action_lock held by execute_action()."""
     logger.debug("_run_action_impl: action_id=%s", action_id)
     device_config = refs.get("device_config")
     refresh_task = refs.get("refresh_task")
@@ -182,10 +154,17 @@ def _run_external_script(context):
         return
     # Expand ~ to home directory before validation
     script_path = os.path.expanduser(script_path)
+    script_path = os.path.realpath(script_path)
     logger.debug("_run_external_script: expanded path=%s", script_path)
-    # Restrict to absolute path under /home or allowlist; avoid arbitrary paths
+    # Restrict scripts to the service account home directory.
+    # This keeps execution predictable and avoids running arbitrary system paths.
+    home_dir = os.path.realpath(os.path.expanduser("~"))
+    home_prefix = os.path.join(home_dir, "")
     if not os.path.isabs(script_path):
         logger.warning("external_script: path must be absolute (after expanding ~): %s", script_path)
+        return
+    if not script_path.startswith(home_prefix):
+        logger.warning("external_script: path must be under %s: %s", home_dir, script_path)
         return
     if not os.path.isfile(script_path):
         logger.warning("external_script: file not found: %s", script_path)
@@ -206,15 +185,16 @@ def _run_external_script(context):
 
 
 def _system_shutdown(app, reboot=False):
-    # Run from worker thread; no request context. Use same commands as core /shutdown route.
+    # Run without request context. Use the same command family as the core /shutdown route.
     _system_shutdown_fallback(reboot)
 
 
 def _system_shutdown_fallback(reboot):
-    if reboot:
-        os.system("sudo reboot")
-    else:
-        os.system("sudo shutdown -h now")
+    command = ["sudo", "reboot"] if reboot else ["sudo", "shutdown", "-h", "now"]
+    try:
+        subprocess.run(command, timeout=10, check=False)
+    except Exception as e:
+        logger.warning("System %s command failed: %s", "reboot" if reboot else "shutdown", e)
 
 
 def _restart_inkypi_service():

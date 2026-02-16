@@ -481,7 +481,10 @@
                     if (res.ok && data.success) {
                         window.location.href = '/';
                     } else {
-                        saveStatus.textContent = data.error || 'Save failed';
+                        const details = Array.isArray(data.details) && data.details.length
+                            ? `: ${data.details.join('; ')}`
+                            : '';
+                        saveStatus.textContent = (data.error || 'Save failed') + details;
                     }
                 } catch (e) {
                     saveStatus.textContent = 'Error: ' + e.message;

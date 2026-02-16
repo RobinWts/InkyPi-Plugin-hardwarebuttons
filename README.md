@@ -2,8 +2,6 @@
 
 This plugin lets you attach physical buttons to your Raspberry Pi and bind them to InkyPi actions: next/previous playlist item, force refresh, shutdown, reboot, restart InkyPi, or run a custom script. Each button supports **short press**, **double-click**, and **long press** with configurable timings.
 
-The same patch of core files is needed as for the [pluginManager](https://github.com/RobinWts/InkyPi-Plugin-PluginManager), it will be automatically applied on first access of the settings panel of this plugin, if you want to know more, see pluginManager docs.
-
 ## How to use the plugin
 
 1. **Open settings**  
@@ -17,7 +15,7 @@ The same patch of core files is needed as for the [pluginManager](https://github
 
 3. **Add a button**  
    Click **Add button**, then:
-   - Enter the **GPIO pin** number (BCM numbering, e.g. `27`).
+   - Enter the **GPIO pin** number (BCM numbering, e.g. `17`).
    - Choose an action for **Short press**, **Double-click**, and **Long press** (or leave “No action”).
    - For **Run external bash script**, optionally set the script path in the text field (absolute path).
 
@@ -45,17 +43,17 @@ A typical momentary pushbutton is wired between a **GPIO** pin and **GND**. The 
 
 | Button leg | Pi connection |
 |------------|----------------|
-| Leg 1      | **GPIO** |
+| Leg 1      | **GPIO** (e.g. BCM 17) |
 | Leg 2      | **GND** (e.g. physical pin 6, 9, 14, 20, 25, 30, 34, or 39) |
 
 When the button is **released**, the GPIO is pulled high (3.3 V). When **pressed**, the pin is shorted to GND and reads low. The plugin uses this “active low” behaviour.
 
-### Example: one button on GPIO 27 (Raspberry Pi Zero 2 W)
+### Example: one button on GPIO 17 (Raspberry Pi Zero 2 W)
 
-- **GPIO 27** = **physical pin 13** (see diagram below).
+- **GPIO 17** = **physical pin 11** (see diagram below).
 - **GND** = e.g. **physical pin 9** (next to GPIO 17) or **physical pin 6**.
 
-So you need two wires: one from one button leg to **pin 13**, one from the other leg to **pin 9** (or another GND).
+So you need two wires: one from one button leg to **pin 11**, one from the other leg to **pin 9** (or another GND).
 
 ### 40-pin header (BCM GPIO, top view)
 
@@ -86,11 +84,11 @@ Avoid **8, 9, 10, 11** if you use SPI for the e-ink display; avoid **2, 3** if y
 
 Repeat the same wiring for each button: each button uses one GPIO and one GND. You can use the same GND for all buttons (e.g. pin 6 or 9). Example for three buttons:
 
-- Button A: GPIO 27 (pin 13) ↔ GND (pin 9)
-- Button B: GPIO 22 (pin 15) ↔ GND (pin 9)
-- Button C: GPIO 23 (pin 16) ↔ GND (pin 9)
+- Button A: GPIO 17 (pin 11) ↔ GND (pin 9)
+- Button B: GPIO 27 (pin 13) ↔ GND (pin 9)
+- Button C: GPIO 22 (pin 15) ↔ GND (pin 9)
 
-In the plugin, add three buttons with GPIO pins **27**, **22**, and **23**.
+In the plugin, add three buttons with GPIO pins **17**, **27**, and **22**.
 
 ## Requirements
 
@@ -100,6 +98,6 @@ In the plugin, add three buttons with GPIO pins **27**, **22**, and **23**.
 
 ## Notes
 
-- Only **one action** runs at a time; further button presses or API calls are ignored until the current action finishes or times out (about 2 minutes).
-- **External script**: use an absolute path to a script; the plugin runs it with `bash` and a 30 s timeout. Restrict paths to avoid running arbitrary commands.
+- Only **one action** runs at a time; further button presses or API calls are ignored until the current action finishes.
+- **External script**: use an absolute path to a script under the InkyPi service user's home directory (for example `/home/pi/scripts/my_action.sh`). The plugin runs it with `bash` and a 30 s timeout.
 - After changing settings, click **Save**; the button manager reloads config without restarting InkyPi.

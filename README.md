@@ -1,5 +1,5 @@
 # Hardware Buttons plugin for InkyPi
-![Settings of the hardwarebutton pluigin](./example.png)
+![Settings of the hardwarebuttons pluigin](./example.png)
 
 *Hardware Buttons* is a plugin for [InkyPi](https://github.com/fatihak/InkyPi) that enables you to attach physical buttons to your Raspberry Pi and bind them to InkyPi actions.
 
@@ -34,7 +34,7 @@ The Hardware Buttons plugin lets you connect physical pushbuttons to your Raspbe
 Install the plugin from a GitHub repository:
 
 ```bash
-inkypi plugin install hardwarebuttons https://github.com/RobinWts/InkyPi-Plugin-hardwarebutton
+inkypi plugin install hardwarebuttons https://github.com/RobinWts/InkyPi-Plugin-hardwarebuttons
 ```
 
 ### Step 2: Patch Core Files

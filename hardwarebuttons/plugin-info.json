@@ -2,5 +2,5 @@
     "display_name": "Hardware Buttons",
     "id": "hardwarebuttons",
     "class": "HardwareButtons",
-    "repository": "https://github.com/RobinWts/InkyPi-Plugin-hardwarebutton"
+    "repository": "https://github.com/RobinWts/InkyPi-Plugin-hardwarebuttons"
 }

@@ -15,7 +15,7 @@ The Hardware Buttons plugin lets you connect physical pushbuttons to your Raspbe
 - **Core Actions**: Trigger refresh, force refresh, navigate playlist items
 - **System Actions**: Shutdown, reboot, restart InkyPi service
 - **Custom Actions**: Run external bash scripts or call URLs/webhooks
-- **Extensible**: Other plugins can register additional actions
+- **Extensible**: Other plugins can register additional actions (This is work in progress so probably subject to change, this is why there is no documentation about that yet)
 - **Automatic Reload**: Button configuration reloads automatically without restarting InkyPi
 - **Graceful Degradation**: Works on development machines without GPIO hardware
 

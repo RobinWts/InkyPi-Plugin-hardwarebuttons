@@ -15,6 +15,7 @@ BUILTIN_ACTIONS = [
     {"id": "system_reboot", "label": "Reboot", "group": "System"},
     {"id": "system_restart_inkypi", "label": "Restart InkyPi service", "group": "System"},
     {"id": "external_script", "label": "Run external bash script", "group": "System"},
+    {"id": "call_url", "label": "Call URL", "group": "System"},
 ]
 # No-action option for dropdowns
 NO_ACTION_ID = ""

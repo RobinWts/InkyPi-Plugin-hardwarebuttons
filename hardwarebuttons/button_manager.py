@@ -140,14 +140,18 @@ def _setup_button(btn, bindings, refs, short_ms, double_ms, generation):
     long_fired = [False]
     press_started_monotonic = [None]
 
-    def run_action(action_id, script_path=None):
+    def run_action(action_id, script_path=None, url=None):
         if not _is_generation_active(generation):
             logger.debug("run_action: stale callback ignored for GPIO %s", bindings.get("gpio_pin"))
             return
         logger.debug("run_action: action_id=%s (from GPIO %s)", action_id, bindings.get("gpio_pin"))
-        ctx = {"script_path": script_path} if script_path else None
+        ctx = {}
+        if script_path:
+            ctx["script_path"] = script_path
+        if url:
+            ctx["url"] = url
         try:
-            actions.execute_action(refs, action_id, ctx)
+            actions.execute_action(refs, action_id, ctx if ctx else None)
         except Exception as e:
             logger.warning("Button action %s failed: %s", action_id, e)
 
@@ -163,7 +167,7 @@ def _setup_button(btn, bindings, refs, short_ms, double_ms, generation):
             pending_short_timer[0] = None
         action = bindings.get("long_action")
         if action:
-            run_action(action, bindings.get("script_path_long"))
+            run_action(action, bindings.get("script_path_long"), bindings.get("url_long"))
 
     def on_released():
         if long_fired[0]:
@@ -191,7 +195,7 @@ def _setup_button(btn, bindings, refs, short_ms, double_ms, generation):
             logger.debug("on_released: second press in window on GPIO %s -> firing double_action", bindings.get("gpio_pin"))
             action = bindings.get("double_action")
             if action:
-                run_action(action, bindings.get("script_path_double"))
+                run_action(action, bindings.get("script_path_double"), bindings.get("url_double"))
             return
         if press_ms > short_ms:
             logger.debug(
@@ -212,7 +216,7 @@ def _setup_button(btn, bindings, refs, short_ms, double_ms, generation):
             logger.debug("fire_short: single short press on GPIO %s -> firing short_action", bindings.get("gpio_pin"))
             action = bindings.get("short_action")
             if action:
-                run_action(action, bindings.get("script_path_short"))
+                run_action(action, bindings.get("script_path_short"), bindings.get("url_short"))
 
         t = threading.Timer(double_ms / 1000.0, fire_short)
         pending_short_timer[0] = t

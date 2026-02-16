@@ -177,6 +177,21 @@ def save():
         script_short = ((btn.get("script_path_short") or "").strip() or None) if short_a == "external_script" else None
         script_double = ((btn.get("script_path_double") or "").strip() or None) if double_a == "external_script" else None
         script_long = ((btn.get("script_path_long") or "").strip() or None) if long_a == "external_script" else None
+        url_short_raw = (btn.get("url_short") or "").strip() or None
+        url_double_raw = (btn.get("url_double") or "").strip() or None
+        url_long_raw = (btn.get("url_long") or "").strip() or None
+        url_short = url_short_raw if short_a == "call_url" else None
+        url_double = url_double_raw if double_a == "call_url" else None
+        url_long = url_long_raw if long_a == "call_url" else None
+        # Validate URLs if provided
+        for url_val, action_type, action_name in [
+            (url_short, short_a, "short"),
+            (url_double, double_a, "double"),
+            (url_long, long_a, "long")
+        ]:
+            if url_val and action_type == "call_url":
+                if not (url_val.startswith("http://") or url_val.startswith("https://")):
+                    validation_errors.append(f"buttons[{i}].url_{action_name} must start with http:// or https://")
         validated_buttons.append({
             "id": bid,
             "gpio_pin": pin,
@@ -186,6 +201,9 @@ def save():
             "script_path_short": script_short,
             "script_path_double": script_double,
             "script_path_long": script_long,
+            "url_short": url_short,
+            "url_double": url_double,
+            "url_long": url_long,
         })
 
     if validation_errors:

@@ -21,6 +21,7 @@ BUILTIN_ACTION_IDS = {
     "system_reboot",
     "system_restart_inkypi",
     "external_script",
+    "call_url",
 }
 
 
@@ -28,7 +29,7 @@ def execute_action(refs, action_id, context=None):
     """Execute a button action. Only one action runs at a time; other triggers are ignored until it returns.
 
     refs = dict with device_config, refresh_task, app (optional), port (optional).
-    context: optional dict with script_path for external_script, etc.
+    context: optional dict with script_path for external_script, url for call_url, etc.
     """
     logger.debug("execute_action called: action_id=%s", action_id)
     if not action_id or action_id == "none":
@@ -57,6 +58,10 @@ def _run_action_impl(refs, action_id, context):
     if action_id == "external_script":
         logger.debug("_run_action_impl: running external_script")
         _run_external_script(context)
+        return
+    if action_id == "call_url":
+        logger.debug("_run_action_impl: running call_url")
+        _call_url(context)
         return
     if action_id == "system_shutdown":
         logger.debug("_run_action_impl: running system_shutdown")
@@ -182,6 +187,41 @@ def _run_external_script(context):
         logger.warning("external_script: timeout running %s", script_path)
     except Exception as e:
         logger.warning("external_script: %s", e)
+
+
+def _call_url(context):
+    """Call a URL via curl when button is triggered."""
+    url = (context.get("url") or "").strip()
+    logger.debug("_call_url: url=%s", url or "(empty)")
+    if not url:
+        logger.warning("call_url: no url in context")
+        return
+    # Basic URL validation: must start with http:// or https://
+    if not (url.startswith("http://") or url.startswith("https://")):
+        logger.warning("call_url: url must start with http:// or https://: %s", url)
+        return
+    logger.info("call_url: calling URL %s", url)
+    try:
+        # Use curl with timeout and follow redirects
+        result = subprocess.run(
+            ["curl", "-s", "-f", "-L", "--max-time", "10", url],
+            timeout=15,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        if result.returncode == 0:
+            logger.debug("call_url: successfully called %s (status=%d)", url, result.returncode)
+        else:
+            logger.warning("call_url: curl returned non-zero exit code %d for %s", result.returncode, url)
+            if result.stderr:
+                logger.debug("call_url: curl stderr: %s", result.stderr[:200])
+    except subprocess.TimeoutExpired:
+        logger.warning("call_url: timeout calling %s", url)
+    except FileNotFoundError:
+        logger.warning("call_url: curl command not found, cannot call URL")
+    except Exception as e:
+        logger.warning("call_url: error calling %s: %s", url, e)
 
 
 def _system_shutdown(app, reboot=False):

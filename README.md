@@ -15,19 +15,20 @@ This plugin lets you attach physical buttons to your Raspberry Pi and bind them 
 
 3. **Add a button**  
    Click **Add button**, then:
-   - Enter the **GPIO pin** number (BCM numbering, e.g. `17`).
+   - Enter the **GPIO pin** number (BCM numbering, e.g. `27`).
    - Choose an action for **Short press**, **Double-click**, and **Long press** (or leave “No action”).
-   - For **Run external bash script**, optionally set the script path in the text field (absolute path).
+   - For **Run external bash script**, optionally set the script path in the text field (absolute path under home directory).
+   - For **Call URL**, optionally set the URL in the text field (must start with `http://` or `https://`).
 
 4. **Save**  
-   Click **Save** to apply. Buttons are reloaded automatically; no need to restart InkyPi.
+   Click **Save and back** to apply. Buttons are reloaded automatically; no need to restart InkyPi.
 
 You can add several buttons (each with its own GPIO pin) and remove any with the **×** control.
 
 ## Available actions
 
 - **Core:** Trigger refresh (next in playlist), Force refresh (re-show current), Next playlist item, Previous playlist item.
-- **System:** Shutdown, Reboot, Restart InkyPi service, Run external bash script (with optional script path).
+- **System:** Shutdown, Reboot, Restart InkyPi service, Run external bash script (with optional script path), Call URL (with optional URL).
 
 Other plugins can register extra actions that appear under “Current plugin” or “Other plugins” in the dropdowns.
 
@@ -100,4 +101,5 @@ In the plugin, add three buttons with GPIO pins **17**, **27**, and **22**.
 
 - Only **one action** runs at a time; further button presses or API calls are ignored until the current action finishes.
 - **External script**: use an absolute path to a script under the InkyPi service user's home directory (for example `/home/pi/scripts/my_action.sh`). The plugin runs it with `bash` and a 30 s timeout.
-- After changing settings, click **Save**; the button manager reloads config without restarting InkyPi.
+- **Call URL**: when triggered, the plugin calls the configured URL using `curl` with a 10 s timeout. The URL must start with `http://` or `https://`. Useful for triggering webhooks, API endpoints, or home automation systems.
+- After changing settings, click **Save and back**; the button manager reloads config without restarting InkyPi.

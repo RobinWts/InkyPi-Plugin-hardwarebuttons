@@ -117,19 +117,22 @@
         font-size: 13px;
     }
 
-    .button-row .script-path-wrap {
+    .button-row .script-path-wrap,
+    .button-row .url-wrap {
         display: none;
         margin-top: 6px;
         margin-left: 95px;
     }
 
-    .button-row .script-path-wrap.visible {
+    .button-row .script-path-wrap.visible,
+    .button-row .url-wrap.visible {
         display: flex;
         align-items: center;
         gap: 10px;
     }
 
-    .button-row .script-path-wrap.visible .script-path-input {
+    .button-row .script-path-wrap.visible .script-path-input,
+    .button-row .url-wrap.visible .url-input {
         flex: 1;
         min-width: 160px;
         max-width: 260px;
@@ -264,6 +267,9 @@
                     <div class="script-path-wrap short-script-wrap" data-action="short">
                         <input type="text" class="script-path-input short-script" placeholder="/path/to/script.sh" value="{{ btn.script_path_short | default(btn.script_path) | default('') }}">
                     </div>
+                    <div class="url-wrap short-url-wrap" data-action="short">
+                        <input type="text" class="url-input short-url" placeholder="https://example.com/api/endpoint" value="{{ btn.url_short | default('') }}">
+                    </div>
                 </div>
                 <div class="field-group">
                     <div class="field-row">
@@ -277,6 +283,9 @@
                     <div class="script-path-wrap double-script-wrap" data-action="double">
                         <input type="text" class="script-path-input double-script" placeholder="/path/to/script.sh" value="{{ btn.script_path_double | default('') }}">
                     </div>
+                    <div class="url-wrap double-url-wrap" data-action="double">
+                        <input type="text" class="url-input double-url" placeholder="https://example.com/api/endpoint" value="{{ btn.url_double | default('') }}">
+                    </div>
                 </div>
                 <div class="field-group">
                     <div class="field-row">
@@ -289,6 +298,9 @@
                     </div>
                     <div class="script-path-wrap long-script-wrap" data-action="long">
                         <input type="text" class="script-path-input long-script" placeholder="/path/to/script.sh" value="{{ btn.script_path_long | default(btn.script_path) | default('') }}">
+                    </div>
+                    <div class="url-wrap long-url-wrap" data-action="long">
+                        <input type="text" class="url-input long-url" placeholder="https://example.com/api/endpoint" value="{{ btn.url_long | default('') }}">
                     </div>
                 </div>
                 <button type="button" class="btn-remove" title="Remove button">×</button>
@@ -312,6 +324,7 @@
 
     const availableActions = {{ available_actions | tojson | safe }};
     const EXTERNAL_SCRIPT_ID = 'external_script';
+    const CALL_URL_ID = 'call_url';
 
     function toggleScriptPathVisibility(row) {
         if (!row) return;
@@ -321,6 +334,9 @@
         row.querySelector('.short-script-wrap').classList.toggle('visible', shortVal === EXTERNAL_SCRIPT_ID);
         row.querySelector('.double-script-wrap').classList.toggle('visible', doubleVal === EXTERNAL_SCRIPT_ID);
         row.querySelector('.long-script-wrap').classList.toggle('visible', longVal === EXTERNAL_SCRIPT_ID);
+        row.querySelector('.short-url-wrap').classList.toggle('visible', shortVal === CALL_URL_ID);
+        row.querySelector('.double-url-wrap').classList.toggle('visible', doubleVal === CALL_URL_ID);
+        row.querySelector('.long-url-wrap').classList.toggle('visible', longVal === CALL_URL_ID);
     }
 
     function buildActionOptions(selectedId) {
@@ -364,6 +380,9 @@
                 <div class="script-path-wrap short-script-wrap" data-action="short">
                     <input type="text" class="script-path-input short-script" placeholder="/path/to/script.sh" value="${escapeHtml(btn.script_path_short || '')}">
                 </div>
+                <div class="url-wrap short-url-wrap" data-action="short">
+                    <input type="text" class="url-input short-url" placeholder="https://example.com/api/endpoint" value="${escapeHtml(btn.url_short || '')}">
+                </div>
             </div>
             <div class="field-group">
                 <div class="field-row">
@@ -373,6 +392,9 @@
                 <div class="script-path-wrap double-script-wrap" data-action="double">
                     <input type="text" class="script-path-input double-script" placeholder="/path/to/script.sh" value="${escapeHtml(btn.script_path_double || '')}">
                 </div>
+                <div class="url-wrap double-url-wrap" data-action="double">
+                    <input type="text" class="url-input double-url" placeholder="https://example.com/api/endpoint" value="${escapeHtml(btn.url_double || '')}">
+                </div>
             </div>
             <div class="field-group">
                 <div class="field-row">
@@ -381,6 +403,9 @@
                 </div>
                 <div class="script-path-wrap long-script-wrap" data-action="long">
                     <input type="text" class="script-path-input long-script" placeholder="/path/to/script.sh" value="${escapeHtml(btn.script_path_long || '')}">
+                </div>
+                <div class="url-wrap long-url-wrap" data-action="long">
+                    <input type="text" class="url-input long-url" placeholder="https://example.com/api/endpoint" value="${escapeHtml(btn.url_long || '')}">
                 </div>
             </div>
             <button type="button" class="btn-remove" title="Remove button">×</button>
@@ -413,7 +438,10 @@
                 long_action: (row.querySelector('.long-action').value || '').trim() || null,
                 script_path_short: (row.querySelector('.short-script').value || '').trim() || null,
                 script_path_double: (row.querySelector('.double-script').value || '').trim() || null,
-                script_path_long: (row.querySelector('.long-script').value || '').trim() || null
+                script_path_long: (row.querySelector('.long-script').value || '').trim() || null,
+                url_short: (row.querySelector('.short-url').value || '').trim() || null,
+                url_double: (row.querySelector('.double-url').value || '').trim() || null,
+                url_long: (row.querySelector('.long-url').value || '').trim() || null
             });
         });
         return { timings, buttons };
@@ -455,7 +483,10 @@
                     long_action: null,
                     script_path_short: null,
                     script_path_double: null,
-                    script_path_long: null
+                    script_path_long: null,
+                    url_short: null,
+                    url_double: null,
+                    url_long: null
                 });
             });
         }

@@ -87,7 +87,7 @@ You can add several buttons (each with its own GPIO pin) and remove any with the
 - **Current Plugin:** Display Action 1-N (context-dependent actions for the currently displayed plugin)
 - **Other Plugins:** Custom anytime actions registered by other plugins (e.g., "Reload Weather Data", "Sync Calendar")
 
-Other plugins can register custom actions that appear in the dropdown. See [Plugin Action Registration Guide](./PLUGIN_ACTION_REGISTRATION.md) for details on how to add custom actions to your plugin.
+Other plugins can register custom actions that appear in the dropdown. See [Plugin Action Registration Guide](./hardwarebuttons/PLUGIN_ACTION_REGISTRATION.md) for details on how to add custom actions to your plugin.
 
 ## Wiring Buttons on a Raspberry Pi Zero 2 W
 

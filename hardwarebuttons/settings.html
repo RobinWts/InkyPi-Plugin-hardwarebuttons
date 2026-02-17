@@ -117,6 +117,37 @@
         font-size: 13px;
     }
 
+    .button-row .trigger-btn {
+        padding: 6px 12px;
+        border: 1px solid var(--border-color, #ddd);
+        border-radius: 6px;
+        font-size: 12px;
+        background: var(--input-bg, #f9f9f9);
+        color: var(--text-primary, #333);
+        cursor: pointer;
+        white-space: nowrap;
+        flex-shrink: 0;
+    }
+
+    .button-row .trigger-btn:hover:not(:disabled) {
+        background: var(--border-color, #e0e0e0);
+    }
+
+    .button-row .trigger-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    [data-theme="dark"] .button-row .trigger-btn {
+        background: #2a2a2a;
+        border-color: #555;
+        color: #eee;
+    }
+
+    [data-theme="dark"] .button-row .trigger-btn:hover:not(:disabled) {
+        background: #3a3a3a;
+    }
+
     .button-row .script-path-wrap,
     .button-row .url-wrap {
         display: none;
@@ -263,6 +294,7 @@
                             <option value="{{ a.id }}" {% if btn.short_action == a.id %}selected{% endif %}>{{ a.label }}</option>
                             {% endfor %}
                         </select>
+                        <button type="button" class="trigger-btn" data-action-type="short" title="Test this action">▶</button>
                     </div>
                     <div class="script-path-wrap short-script-wrap" data-action="short">
                         <input type="text" class="script-path-input short-script" placeholder="/path/to/script.sh" value="{{ btn.script_path_short | default(btn.script_path) | default('') }}">
@@ -279,6 +311,7 @@
                             <option value="{{ a.id }}" {% if btn.double_action == a.id %}selected{% endif %}>{{ a.label }}</option>
                             {% endfor %}
                         </select>
+                        <button type="button" class="trigger-btn" data-action-type="double" title="Test this action">▶</button>
                     </div>
                     <div class="script-path-wrap double-script-wrap" data-action="double">
                         <input type="text" class="script-path-input double-script" placeholder="/path/to/script.sh" value="{{ btn.script_path_double | default('') }}">
@@ -295,6 +328,7 @@
                             <option value="{{ a.id }}" {% if btn.long_action == a.id %}selected{% endif %}>{{ a.label }}</option>
                             {% endfor %}
                         </select>
+                        <button type="button" class="trigger-btn" data-action-type="long" title="Test this action">▶</button>
                     </div>
                     <div class="script-path-wrap long-script-wrap" data-action="long">
                         <input type="text" class="script-path-input long-script" placeholder="/path/to/script.sh" value="{{ btn.script_path_long | default(btn.script_path) | default('') }}">
@@ -325,6 +359,70 @@
     const availableActions = {{ available_actions | tojson | safe }};
     const EXTERNAL_SCRIPT_ID = 'external_script';
     const CALL_URL_ID = 'call_url';
+
+    async function triggerAction(row, actionType) {
+        const actionSelect = row.querySelector(`.${actionType}-action`);
+        const actionId = (actionSelect?.value || '').trim();
+        if (!actionId) {
+            alert('No action selected');
+            return;
+        }
+        const triggerBtn = row.querySelector(`.trigger-btn[data-action-type="${actionType}"]`);
+        const originalText = triggerBtn.textContent;
+        triggerBtn.disabled = true;
+        triggerBtn.textContent = '...';
+        const context = {};
+        if (actionId === EXTERNAL_SCRIPT_ID) {
+            const scriptInput = row.querySelector(`.${actionType}-script`);
+            const scriptPath = (scriptInput?.value || '').trim();
+            if (scriptPath) {
+                context.script_path = scriptPath;
+            }
+        } else if (actionId === CALL_URL_ID) {
+            const urlInput = row.querySelector(`.${actionType}-url`);
+            const url = (urlInput?.value || '').trim();
+            if (url) {
+                context.url = url;
+            }
+        }
+        try {
+            const res = await fetch('/hardwarebuttons-api/execute', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action_id: actionId, context: context })
+            });
+            const data = await res.json().catch(() => ({}));
+            if (res.ok && data.success) {
+                triggerBtn.textContent = '✓';
+                setTimeout(() => {
+                    triggerBtn.textContent = originalText;
+                    triggerBtn.disabled = false;
+                }, 1000);
+            } else {
+                alert('Action failed: ' + (data.error || 'Unknown error'));
+                triggerBtn.textContent = originalText;
+                triggerBtn.disabled = false;
+            }
+        } catch (e) {
+            alert('Error: ' + e.message);
+            triggerBtn.textContent = originalText;
+            triggerBtn.disabled = false;
+        }
+    }
+
+    function setupTriggerButtons() {
+        document.querySelectorAll('.button-row').forEach(row => {
+            row.querySelectorAll('.trigger-btn').forEach(btn => {
+                if (!btn.hasAttribute('data-listener-attached')) {
+                    btn.setAttribute('data-listener-attached', 'true');
+                    btn.addEventListener('click', () => {
+                        const actionType = btn.getAttribute('data-action-type');
+                        triggerAction(row, actionType);
+                    });
+                }
+            });
+        });
+    }
 
     function toggleScriptPathVisibility(row) {
         if (!row) return;
@@ -376,6 +474,7 @@
                 <div class="field-row">
                     <label>Short press</label>
                     <select class="short-action">${buildActionOptions(btn.short_action)}</select>
+                    <button type="button" class="trigger-btn" data-action-type="short" title="Test this action">▶</button>
                 </div>
                 <div class="script-path-wrap short-script-wrap" data-action="short">
                     <input type="text" class="script-path-input short-script" placeholder="/path/to/script.sh" value="${escapeHtml(btn.script_path_short || '')}">
@@ -388,6 +487,7 @@
                 <div class="field-row">
                     <label>Double-click</label>
                     <select class="double-action">${buildActionOptions(btn.double_action)}</select>
+                    <button type="button" class="trigger-btn" data-action-type="double" title="Test this action">▶</button>
                 </div>
                 <div class="script-path-wrap double-script-wrap" data-action="double">
                     <input type="text" class="script-path-input double-script" placeholder="/path/to/script.sh" value="${escapeHtml(btn.script_path_double || '')}">
@@ -400,6 +500,7 @@
                 <div class="field-row">
                     <label>Long press</label>
                     <select class="long-action">${buildActionOptions(btn.long_action)}</select>
+                    <button type="button" class="trigger-btn" data-action-type="long" title="Test this action">▶</button>
                 </div>
                 <div class="script-path-wrap long-script-wrap" data-action="long">
                     <input type="text" class="script-path-input long-script" placeholder="/path/to/script.sh" value="${escapeHtml(btn.script_path_long || '')}">
@@ -416,6 +517,7 @@
         row.querySelectorAll('.short-action, .double-action, .long-action').forEach(el => {
             el.addEventListener('change', () => toggleScriptPathVisibility(row));
         });
+        setupTriggerButtons();
     }
 
     function collectPayload() {
@@ -471,6 +573,7 @@
                 el.addEventListener('change', () => toggleScriptPathVisibility(row));
             });
         });
+        setupTriggerButtons();
 
         const addBtn = document.getElementById('add-button-btn');
         if (addBtn) {

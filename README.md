@@ -15,6 +15,7 @@ The Hardware Buttons plugin lets you connect physical pushbuttons to your Raspbe
 - **Core Actions**: Trigger refresh, force refresh, navigate playlist items
 - **System Actions**: Shutdown, reboot, restart InkyPi service
 - **Custom Actions**: Run external bash scripts or call URLs/webhooks
+- **Test Actions**: Trigger actions directly from the settings page using the ▶ button next to each action dropdown (works on device and in dev mode)
 - **Automatic Reload**: Button configuration reloads automatically without restarting InkyPi
 - **Graceful Degradation**: Works on development machines without GPIO hardware
 
@@ -74,6 +75,7 @@ See [CORE_CHANGES.md](./CORE_CHANGES.md) for detailed information about what the
    - Choose an action for **Short press**, **Double-click**, and **Long press** (or leave "No action").
    - For **Run external bash script**, optionally set the script path in the text field (absolute path under home directory).
    - For **Call URL**, optionally set the URL in the text field (must start with `http://` or `https://`).
+   - **Test actions**: Click the **▶** button next to any action dropdown to test the currently selected action immediately. This works on both device and development machines (no GPIO hardware required for testing).
 
 4. **Save**  
    Click **Save and back** to apply. Buttons are reloaded automatically; no need to restart InkyPi.
@@ -195,6 +197,7 @@ def _register_actions(state):
 ## Notes
 
 - Only **one action** runs at a time; further button presses or API calls are ignored until the current action finishes.
+- **Test actions**: Use the **▶** trigger button next to each action dropdown to test actions without physical buttons. The button shows "..." while executing, then "✓" on success. This is useful for testing actions during configuration, especially on development machines without GPIO hardware.
 - **External script**: use an absolute path to a script under the InkyPi service user's home directory (for example `/home/pi/scripts/my_action.sh`). The plugin runs it with `bash` and a 30 s timeout.
 - **Call URL**: when triggered, the plugin calls the configured URL using `curl` with a 10 s timeout. The URL must start with `http://` or `https://`. Useful for triggering webhooks, API endpoints, or home automation systems.
 - After changing settings, click **Save and back**; the button manager reloads config without restarting InkyPi.

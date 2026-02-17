@@ -1,4 +1,15 @@
-"""API routes for hardwarebuttons plugin."""
+"""API routes for hardwarebuttons plugin.
+
+This module provides:
+- /hardwarebuttons-api/save - Save button configuration
+- /hardwarebuttons-api/available-actions - Get list of all bindable actions
+- /hardwarebuttons-api/execute - Execute an action (internal/testing)
+
+Plugin Action Registration:
+- Other plugins can register custom actions via action_registry.register_actions()
+- See action_registry.py for the registration API
+- See PLUGIN_ACTION_REGISTRATION.md for the full guide
+"""
 
 import os
 import logging

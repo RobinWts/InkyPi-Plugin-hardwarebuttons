@@ -76,7 +76,7 @@ class MyPlugin(BasePlugin):
         pass
 ```
 
-See [Advanced Plugin Development](../../../docs/advanced_plugin_development.md) for more details on blueprints.
+This needs the Core files to be patched, this is done automatically when you install the hardwarebuttons-plugin.
 
 ### Step 2: Register Actions in Blueprint Initialization
 
